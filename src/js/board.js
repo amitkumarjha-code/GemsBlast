@@ -17,6 +17,7 @@ class GameBoard {
         this.selectedGem = null;
         this.animating = false;
         this.hints = [];
+        this.lastSwapPosition = null; // Track where user moved a gem
 
         // Game mode support
         this.gameMode = null;
@@ -68,6 +69,11 @@ class GameBoard {
 
                 this.grid[y][x] = gem;
             }
+        }
+        
+        // Add collectibles if in Stargazer mode
+        if (this.gameMode && this.gameMode.name === 'Stargazer' && typeof this.gameMode.addCollectibles === 'function') {
+            this.gameMode.addCollectibles(this);
         }
     }
 
@@ -194,6 +200,12 @@ class GameBoard {
             for (let x = 0; x < this.width - 2; x++) {
                 const gem = this.getGem(x, y);
                 if (!gem || visited[y][x]) continue;
+                
+                // Skip collectibles - they don't participate in matches
+                const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
+                if (gem.type === GemType.STAR || gem.type === GemType.SUN || gem.type === GemType.MOON) {
+                    continue;
+                }
 
                 const match = this.findHorizontalMatch(x, y);
                 if (match.length >= 3) {
@@ -219,6 +231,12 @@ class GameBoard {
             for (let y = 0; y < this.height - 2; y++) {
                 const gem = this.getGem(x, y);
                 if (!gem || visited[y][x]) continue;
+                
+                // Skip collectibles - they don't participate in matches
+                const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
+                if (gem.type === GemType.STAR || gem.type === GemType.SUN || gem.type === GemType.MOON) {
+                    continue;
+                }
 
                 const match = this.findVerticalMatch(x, y);
                 if (match.length >= 3) {
@@ -323,12 +341,15 @@ class GameBoard {
                             }
                         });
 
+                        // Only create bomb if combined match has 5 or more gems
+                        const specialType = combinedGems.length >= 5 ? 'bomb' : 'normal';
+
                         enhancedMatches.push({
                             type: 'tshape',
                             gems: combinedGems,
                             color: match1.color,
                             length: combinedGems.length,
-                            specialType: 'bomb',
+                            specialType: specialType,
                             centerX: intersection.x,
                             centerY: intersection.y
                         });
@@ -519,14 +540,38 @@ class GameBoard {
         const specialGemsToCreate = [];
         const specialGemsToActivate = []; // Track special gems that need activation
 
-        // Collect all gems to remove and determine special gems to create
+        // First pass: Collect all gems to remove and determine special gems to create
         matches.forEach(match => {
             // Find the best position to place special gem (usually center)
             const specialGemPos = this.getBestSpecialGemPosition(match);
 
+            // Create special gem if match qualifies
+            if (match.specialType && match.specialType !== 'normal' && specialGemPos) {
+                specialGemsToCreate.push({
+                    x: specialGemPos.x,
+                    y: specialGemPos.y,
+                    color: match.color,
+                    type: match.specialType,
+                    isHorizontal: match.type === 'horizontal' // For rocket orientation
+                });
+
+                // Notify game mode about special gem creation
+                if (this.gameMode && typeof this.gameMode.onSpecialGemCreated === 'function') {
+                    this.gameMode.onSpecialGemCreated(match.gems, match.specialType);
+                }
+            }
+
             match.gems.forEach(pos => {
                 const key = `${pos.x},${pos.y}`;
-                gemsToRemove.add(key);
+                
+                // Check if this position will have a special gem created - if so, DON'T remove it
+                const willCreateSpecialHere = specialGemsToCreate.some(
+                    special => special.x === pos.x && special.y === pos.y
+                );
+                
+                if (!willCreateSpecialHere) {
+                    gemsToRemove.add(key);
+                }
 
                 // Check if this is a special gem (rocket, bomb) being matched
                 if (pos.gem && (pos.gem.type === GemType.ROCKET || pos.gem.type === GemType.BOMB)) {
@@ -558,20 +603,6 @@ class GameBoard {
                 // Create floating score text
                 const matchScore = match.gems.length * 10;
                 this.createFloatingScoreText(pixelX, pixelY, matchScore, match.gems.length);
-            }            // Create special gem if match qualifies
-            if (match.specialType && match.specialType !== 'normal' && specialGemPos) {
-                specialGemsToCreate.push({
-                    x: specialGemPos.x,
-                    y: specialGemPos.y,
-                    color: match.color,
-                    type: match.specialType,
-                    isHorizontal: match.type === 'horizontal' // For rocket orientation
-                });
-
-                // Notify game mode about special gem creation
-                if (this.gameMode && typeof this.gameMode.onSpecialGemCreated === 'function') {
-                    this.gameMode.onSpecialGemCreated(match.gems, match.specialType);
-                }
             }
         });
 
@@ -594,11 +625,12 @@ class GameBoard {
         });
 
         // Notify game mode about matches for objective tracking
-        if (this.gameMode && typeof this.gameMode.updateObjectives === 'function') {
+        // Skip for StargazerMode as it checks collectibles after gravity instead
+        if (this.gameMode && typeof this.gameMode.updateObjectives === 'function' && this.gameMode.name !== 'Stargazer') {
             this.gameMode.updateObjectives(removedGems);
         }
 
-        // Remove gems with animation
+        // Remove gems with animation (but NOT positions where special gems will be created)
         gemsToRemove.forEach(key => {
             const [x, y] = key.split(',').map(Number);
             const gem = this.getGem(x, y);
@@ -609,29 +641,26 @@ class GameBoard {
             }
         });
 
-        // Create special gems after removal animation
-        setTimeout(() => {
-            specialGemsToCreate.forEach(specialData => {
-                // Only create if position is still empty
-                if (!this.getGem(specialData.x, specialData.y)) {
-                    const specialGem = Gem.createSpecial(
-                        specialData.x,
-                        specialData.y,
-                        specialData.color,
-                        specialData.type,
-                        specialData.isHorizontal
-                    );
-                    this.setGem(specialData.x, specialData.y, specialGem);
+        // Create special gems IMMEDIATELY (not after delay) at their positions
+        specialGemsToCreate.forEach(specialData => {
+            const specialGem = Gem.createSpecial(
+                specialData.x,
+                specialData.y,
+                specialData.color,
+                specialData.type,
+                specialData.isHorizontal
+            );
+            this.setGem(specialData.x, specialData.y, specialGem);
 
-                    // Add creation particle effect
-                    this.particleSystem.createSpecialGemEffect(
-                        specialData.x,
-                        specialData.y,
-                        specialData.type
-                    );
-                }
-            });
-        }, 200);
+            // Add creation particle effect
+            setTimeout(() => {
+                this.particleSystem.createSpecialGemEffect(
+                    specialData.x,
+                    specialData.y,
+                    specialData.type
+                );
+            }, 100);
+        });
 
         return removedGems;
     }
@@ -645,7 +674,18 @@ class GameBoard {
             return { x: match.centerX, y: match.centerY };
         }
 
-        // For line matches, use the middle gem
+        // Check if the last swap position is part of this match
+        if (this.lastSwapPosition) {
+            const swapInMatch = match.gems.find(
+                pos => pos.x === this.lastSwapPosition.x && pos.y === this.lastSwapPosition.y
+            );
+            if (swapInMatch) {
+                // Use the swap position - where the user moved the gem
+                return { x: this.lastSwapPosition.x, y: this.lastSwapPosition.y };
+            }
+        }
+
+        // For line matches, use the middle gem as fallback
         if (match.gems.length > 0) {
             const middleIndex = Math.floor(match.gems.length / 2);
             const middleGem = match.gems[middleIndex];
@@ -1008,6 +1048,20 @@ class GameBoard {
                 this.selectedGem.x, this.selectedGem.y,
                 clickedGem.x, clickedGem.y
             )) {
+                // Check if swapping with a collectible in Stargazer mode
+                const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
+                const isCollectibleSwap = (
+                    (this.selectedGem.type === GemType.STAR || this.selectedGem.type === GemType.SUN || this.selectedGem.type === GemType.MOON) ||
+                    (clickedGem.type === GemType.STAR || clickedGem.type === GemType.SUN || clickedGem.type === GemType.MOON)
+                );
+                
+                if (isCollectibleSwap && this.gameMode && this.gameMode.name === 'Stargazer') {
+                    // Allow swapping with collectibles to move them
+                    this.swapGems(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y);
+                    this.clearSelection();
+                    return true;
+                }
+                
                 // First check if normal swap would create matches
                 if (this.wouldCreateMatchAfterSwap(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y)) {
                     // Valid swap - do normal swap
@@ -1044,6 +1098,20 @@ class GameBoard {
             this.selectedGem.x, this.selectedGem.y,
             clickedGem.x, clickedGem.y
         )) {
+            // Check if swapping with a collectible in Stargazer mode
+            const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
+            const isCollectibleSwap = (
+                (this.selectedGem.type === GemType.STAR || this.selectedGem.type === GemType.SUN || this.selectedGem.type === GemType.MOON) ||
+                (clickedGem.type === GemType.STAR || clickedGem.type === GemType.SUN || clickedGem.type === GemType.MOON)
+            );
+            
+            if (isCollectibleSwap && this.gameMode && this.gameMode.name === 'Stargazer') {
+                // Allow swapping with collectibles to move them
+                this.swapGems(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y);
+                this.clearSelection();
+                return true;
+            }
+            
             // First check if normal swap would create matches
             if (this.wouldCreateMatchAfterSwap(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y)) {
                 // Valid swap - do normal swap
@@ -1469,7 +1537,7 @@ class GameBoard {
 
             case 'rainbow_rocket':
                 this.playSpecialSFX(SoundEffect.RAINBOW);
-                // Transform all gems of color to rockets and activate them
+                // Transform all gems of color to rockets and activate them ONE BY ONE
                 const targetColor = combo.color;
                 const rocketsToActivate = [];
 
@@ -1485,12 +1553,12 @@ class GameBoard {
                     }
                 }
 
-                // Activate all rockets after a delay
-                setTimeout(() => {
-                    rocketsToActivate.forEach(rocket => {
+                // Activate all rockets one by one with delay
+                rocketsToActivate.forEach((rocket, index) => {
+                    setTimeout(() => {
                         this.activateSpecialGem(rocket);
-                    });
-                }, 500);
+                    }, 500 + (index * 300)); // 300ms delay between each rocket
+                });
                 break;
 
             case 'rainbow_bomb':
@@ -1558,6 +1626,8 @@ class GameBoard {
         // Check if swap would create matches
         if (this.wouldCreateMatchAfterSwap(gem1.x, gem1.y, gem2.x, gem2.y)) {
             console.log('Valid swap - will create matches');
+            // Store the position where the user moved the gem TO (gem2's original position)
+            this.lastSwapPosition = { x: gem2.x, y: gem2.y };
             this.swapGems(gem1.x, gem1.y, gem2.x, gem2.y);
             return true;
         }

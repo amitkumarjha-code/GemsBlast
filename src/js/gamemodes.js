@@ -315,150 +315,148 @@ class StargazerMode extends GameMode {
     constructor(config = {}) {
         super({
             name: 'Stargazer',
-            description: 'Connect gems to form beautiful constellation patterns!',
+            description: 'Collect stars, suns, and moons by bringing them to the bottom!',
             moves: 40,
             targetScore: 4000,
             scoreMultiplier: 1.5,
             ...config
         });
 
-        // Track constellation progress
-        this.constellations = [];
-        this.completedConstellations = 0;
-        this.targetConstellations = 3;
+        // Track collectibles
+        this.collected = {
+            stars: 0,
+            suns: 0,
+            moons: 0
+        };
+        
+        this.targets = {
+            stars: 3,
+            suns: 2,
+            moons: 2
+        };
 
         this.objectives = [
             {
-                type: 'constellations',
-                description: 'Form constellation patterns',
-                target: this.targetConstellations,
+                type: 'stars',
+                description: 'Collect Stars',
+                target: this.targets.stars,
                 current: 0,
                 icon: '⭐'
+            },
+            {
+                type: 'suns',
+                description: 'Collect Suns',
+                target: this.targets.suns,
+                current: 0,
+                icon: '☀️'
+            },
+            {
+                type: 'moons',
+                description: 'Collect Moons',
+                target: this.targets.moons,
+                current: 0,
+                icon: '🌙'
             }
         ];
-
-        this.setupConstellations();
-    }
-
-    setupConstellations() {
-        // Define constellation patterns (relative positions)
-        const patterns = [
-            // Cross pattern
-            {
-                name: 'Cross',
-                pattern: [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]],
-                color: 'blue'
-            },
-            // L pattern
-            {
-                name: 'L-Shape',
-                pattern: [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2]],
-                color: 'red'
-            },
-            // Diamond pattern
-            {
-                name: 'Diamond',
-                pattern: [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]],
-                color: 'purple'
-            }
-        ];
-
-        this.constellations = patterns.slice(0, this.targetConstellations);
     }
 
     /**
-     * Check for constellation patterns in matches
-     * @param {Array} matches - Array of matched gems
+     * Add collectibles to board
+     */
+    addCollectibles(board) {
+        this.board = board;
+        
+        // Spawn initial collectibles in top rows
+        const collectibleTypes = [
+            { type: 'star', count: this.targets.stars },
+            { type: 'sun', count: this.targets.suns },
+            { type: 'moon', count: this.targets.moons }
+        ];
+        
+        collectibleTypes.forEach(({ type, count }) => {
+            for (let i = 0; i < count; i++) {
+                // Place in top 2 rows randomly
+                const x = Math.floor(Math.random() * board.width);
+                const y = Math.floor(Math.random() * 2);
+                
+                // Create collectible gem
+                const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
+                const gemType = type === 'star' ? GemType.STAR : 
+                               type === 'sun' ? GemType.SUN : GemType.MOON;
+                
+                const collectible = new Gem(x, y, 0, gemType);
+                board.setGem(x, y, collectible);
+            }
+        });
+    }
+
+    /**
+     * Update objectives when gems reach bottom
      */
     updateObjectives(matches) {
-        // Group matches by color and position
-        const colorGroups = {};
-        matches.forEach(gem => {
-            if (!colorGroups[gem.color]) {
-                colorGroups[gem.color] = [];
-            }
-            colorGroups[gem.color].push({ x: gem.x, y: gem.y });
-        });
-
-        // Check each constellation pattern
-        this.constellations.forEach((constellation, index) => {
-            if (constellation.completed) return;
-
-            const targetColor = constellation.color;
-            if (colorGroups[targetColor] && colorGroups[targetColor].length >= constellation.pattern.length) {
-                if (this.matchesPattern(colorGroups[targetColor], constellation.pattern)) {
-                    constellation.completed = true;
-                    this.completedConstellations++;
-
-                    // Create special particle effect
-                    if (this.board.particleSystem) {
-                        colorGroups[targetColor].forEach(pos => {
-                            const worldX = this.board.offsetX + pos.x * this.board.cellSize + this.board.cellSize / 2;
-                            const worldY = this.board.offsetY + pos.y * this.board.cellSize + this.board.cellSize / 2;
-                            this.board.particleSystem.createMagic(worldX, worldY);
-                        });
-                    }
+        // Check if any collectibles reached the bottom row
+        if (!this.board) return;
+        
+        const bottomRow = this.board.height - 1;
+        
+        for (let x = 0; x < this.board.width; x++) {
+            const gem = this.board.getGem(x, bottomRow);
+            if (!gem) continue;
+            
+            const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
+            
+            if (gem.type === GemType.STAR && this.collected.stars < this.targets.stars) {
+                this.collected.stars++;
+                this.objectives[0].current = this.collected.stars;
+                this.board.setGem(x, bottomRow, null);
+                
+                // Particle effect
+                if (this.board.particleSystem) {
+                    const worldX = this.board.offsetX + x * this.board.cellSize + this.board.cellSize / 2;
+                    const worldY = this.board.offsetY + bottomRow * this.board.cellSize + this.board.cellSize / 2;
+                    this.board.particleSystem.createExplosion(worldX, worldY, 'star', 30);
                 }
             }
-        });
-
-        this.objectives[0].current = this.completedConstellations;
-    }
-
-    /**
-     * Check if a set of positions matches a constellation pattern
-     * @param {Array} positions - Array of {x, y} positions
-     * @param {Array} pattern - Pattern to match
-     * @returns {boolean}
-     */
-    matchesPattern(positions, pattern) {
-        // Try different starting positions and orientations
-        for (let startPos of positions) {
-            for (let rotation = 0; rotation < 4; rotation++) {
-                const rotatedPattern = this.rotatePattern(pattern, rotation);
-                if (this.checkPatternMatch(positions, rotatedPattern, startPos)) {
-                    return true;
+            else if (gem.type === GemType.SUN && this.collected.suns < this.targets.suns) {
+                this.collected.suns++;
+                this.objectives[1].current = this.collected.suns;
+                this.board.setGem(x, bottomRow, null);
+                
+                if (this.board.particleSystem) {
+                    const worldX = this.board.offsetX + x * this.board.cellSize + this.board.cellSize / 2;
+                    const worldY = this.board.offsetY + bottomRow * this.board.cellSize + this.board.cellSize / 2;
+                    this.board.particleSystem.createExplosion(worldX, worldY, 'orange', 30);
+                }
+            }
+            else if (gem.type === GemType.MOON && this.collected.moons < this.targets.moons) {
+                this.collected.moons++;
+                this.objectives[2].current = this.collected.moons;
+                this.board.setGem(x, bottomRow, null);
+                
+                if (this.board.particleSystem) {
+                    const worldX = this.board.offsetX + x * this.board.cellSize + this.board.cellSize / 2;
+                    const worldY = this.board.offsetY + bottomRow * this.board.cellSize + this.board.cellSize / 2;
+                    this.board.particleSystem.createExplosion(worldX, worldY, 'purple', 30);
                 }
             }
         }
-        return false;
     }
 
     /**
-     * Rotate a pattern by 90 degrees
-     * @param {Array} pattern - Original pattern
-     * @param {number} rotations - Number of 90-degree rotations
-     * @returns {Array}
+     * Check if objectives are complete
      */
-    rotatePattern(pattern, rotations) {
-        let result = [...pattern];
-        for (let i = 0; i < rotations; i++) {
-            result = result.map(([x, y]) => [-y, x]);
-        }
-        return result;
+    checkCompletion() {
+        return this.collected.stars >= this.targets.stars &&
+               this.collected.suns >= this.targets.suns &&
+               this.collected.moons >= this.targets.moons;
     }
 
     /**
-     * Check if positions match a pattern at a specific offset
-     * @param {Array} positions - Available positions
-     * @param {Array} pattern - Pattern to match
-     * @param {Object} offset - Starting offset {x, y}
-     * @returns {boolean}
-     */
-    checkPatternMatch(positions, pattern, offset) {
-        return pattern.every(([px, py]) => {
-            const targetX = offset.x + px;
-            const targetY = offset.y + py;
-            return positions.some(pos => pos.x === targetX && pos.y === targetY);
-        });
-    }
-
-    /**
-     * Check if all constellations are completed
+     * Check if all objectives are completed
      * @returns {boolean}
      */
     isCompleted() {
-        return this.completedConstellations >= this.targetConstellations;
+        return this.checkCompletion();
     }
 
     /**

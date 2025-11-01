@@ -566,12 +566,19 @@ class GemsBlastGame {
      * Restart current level
      */
     restartLevel() {
-        // Reset game mode
         if (this.currentGameMode) {
             this.currentGameMode.reset();
         }
-
         this.score = 0;
+        
+        // Reset timer and moves to initial values
+        if (this.config.enableMoves) {
+            this.moves = this.config.initialMoves;
+        }
+        if (this.config.enableTimer) {
+            this.timeRemaining = this.config.initialTime;
+        }
+        
         this.board.initializeBoard();
         this.startGame();
     }
@@ -792,7 +799,7 @@ class GemsBlastGame {
 
         // Play combo sound
         if (this.audioManager && this.combo > 1) {
-            this.audioManager.playSound(SoundEffect.COMBO);
+            this.audioManager.playSFX(SoundEffect.COMBO);
         }
 
         // Screen shake for high combos
@@ -1068,6 +1075,11 @@ class GemsBlastGame {
         // Remove matched gems
         const removedGems = this.board.removeMatches(matches);
 
+        // Clear swap position after first match is processed
+        if (!isCascade) {
+            this.board.lastSwapPosition = null;
+        }
+
         // Process the move (only call this for initial match, not cascades)
         if (!isCascade) {
             this.processMove(matches);
@@ -1084,6 +1096,12 @@ class GemsBlastGame {
 
         // Wait for falling animation
         await Utils.delay(800);
+
+        // Check for collectibles reaching bottom (Stargazer mode)
+        if (this.currentGameMode && this.currentGameMode.name === 'Stargazer') {
+            this.currentGameMode.updateObjectives([]);
+            this.ui.updateDisplay();
+        }
 
         // Check for new matches
         const newMatches = this.board.findMatches();

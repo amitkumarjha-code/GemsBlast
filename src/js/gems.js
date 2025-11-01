@@ -9,7 +9,10 @@ const GemType = {
     NORMAL: 'normal',
     ROCKET: 'rocket',
     BOMB: 'bomb',
-    RAINBOW: 'rainbow'
+    RAINBOW: 'rainbow',
+    STAR: 'star',
+    SUN: 'sun',
+    MOON: 'moon'
 };
 
 /**
@@ -242,11 +245,23 @@ class Gem {
      * Check if gem can be matched with another gem
      */
     canMatchWith(otherGem) {
-        if (!otherGem || this.type === GemType.RAINBOW || otherGem.type === GemType.RAINBOW) {
-            return true; // Rainbow gems can match with anything
+        if (!otherGem) {
+            return false;
         }
 
-        // Special gems (rocket, bomb) can match with same color gems or other special gems of same color
+        // Rainbow gems should NEVER be matched automatically - only activated by swapping
+        if (this.type === GemType.RAINBOW || otherGem.type === GemType.RAINBOW) {
+            return false;
+        }
+
+        // Collectibles (star, sun, moon) cannot be matched
+        if (this.type === GemType.STAR || this.type === GemType.SUN || this.type === GemType.MOON ||
+            otherGem.type === GemType.STAR || otherGem.type === GemType.SUN || otherGem.type === GemType.MOON) {
+            return false;
+        }
+
+        // Rockets and Bombs CAN match with anything of the same color (including each other)
+        // This allows: normal + normal + rocket, or rocket + rocket, etc.
         return this.color === otherGem.color;
     }
 
@@ -362,49 +377,55 @@ class GemRenderer {
             case GemType.RAINBOW:
                 this.drawRainbowGem(ctx, size, gem.hint);
                 break;
+            case GemType.STAR:
+                this.drawStarCollectible(ctx, size);
+                break;
+            case GemType.SUN:
+                this.drawSunCollectible(ctx, size);
+                break;
+            case GemType.MOON:
+                this.drawMoonCollectible(ctx, size);
+                break;
         }
 
         ctx.restore();
     }
 
     /**
-     * Draw a normal gem
+     * Draw a normal gem as a fruit
      */
     drawNormalGem(ctx, size, color, selected = false, hint = false) {
         const radius = size / 2;
-        const colorHex = this.getGemColorHex(color);
-
-        // Create gradient
-        const gradient = ctx.createRadialGradient(0, -radius * 0.3, 0, 0, 0, radius);
-        gradient.addColorStop(0, this.lightenColor(colorHex, 0.4));
-        gradient.addColorStop(0.7, colorHex);
-        gradient.addColorStop(1, this.darkenColor(colorHex, 0.3));
-
-        // Draw gem body
-        ctx.beginPath();
-        ctx.arc(0, 0, radius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Draw gem outline
-        ctx.strokeStyle = selected ? '#FFD700' : this.darkenColor(colorHex, 0.5);
-        ctx.lineWidth = selected ? 3 : 2;
-        ctx.stroke();
-
-        // Draw highlight
-        ctx.beginPath();
-        ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.fill();
+        
+        // Draw different fruit based on color
+        switch(color) {
+            case GemColor.RED:
+                this.drawStrawberry(ctx, radius, selected);
+                break;
+            case GemColor.ORANGE:
+                this.drawOrange(ctx, radius, selected);
+                break;
+            case GemColor.YELLOW:
+                this.drawBanana(ctx, radius, selected);
+                break;
+            case GemColor.GREEN:
+                this.drawGrape(ctx, radius, selected);
+                break;
+            case GemColor.BLUE:
+                this.drawBlueberry(ctx, radius, selected);
+                break;
+            case GemColor.PURPLE:
+                this.drawPlum(ctx, radius, selected);
+                break;
+        }
 
         // Draw hint glow
         if (hint) {
             const now = Date.now();
-            const pulseSpeed = 400; // ms for complete pulse cycle
+            const pulseSpeed = 400;
             const pulsePhase = (now % pulseSpeed) / pulseSpeed;
             const pulseIntensity = 0.5 + Math.sin(pulsePhase * Math.PI * 2) * 0.4;
 
-            // Outer glow ring
             ctx.save();
             ctx.globalAlpha = pulseIntensity * 0.6;
             ctx.beginPath();
@@ -414,7 +435,6 @@ class GemRenderer {
             ctx.stroke();
             ctx.restore();
 
-            // Inner glow ring
             ctx.save();
             ctx.globalAlpha = pulseIntensity * 0.8;
             ctx.beginPath();
@@ -423,22 +443,336 @@ class GemRenderer {
             ctx.lineWidth = 3;
             ctx.stroke();
             ctx.restore();
+        }
+    }
 
-            // Sparkle effect
-            ctx.save();
-            ctx.globalAlpha = pulseIntensity;
-            for (let i = 0; i < 4; i++) {
-                const angle = (i * Math.PI / 2) + (now / 1000);
-                const sparkleX = Math.cos(angle) * radius * 1.4;
-                const sparkleY = Math.sin(angle) * radius * 1.4;
+    /**
+     * Draw a strawberry (red)
+     */
+    drawStrawberry(ctx, radius, selected) {
+        // Draw strawberry body
+        ctx.fillStyle = '#FF3B3B';
+        ctx.beginPath();
+        ctx.ellipse(0, radius * 0.1, radius * 0.8, radius * 0.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (selected) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
 
-                ctx.beginPath();
-                ctx.arc(sparkleX, sparkleY, 2, 0, Math.PI * 2);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fill();
+        // Draw seeds
+        ctx.fillStyle = '#FFEB3B';
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const x = Math.cos(angle) * radius * 0.4;
+            const y = Math.sin(angle) * radius * 0.5 + radius * 0.1;
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw green leaf top
+        ctx.fillStyle = '#4CAF50';
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.4, -radius * 0.6);
+        ctx.lineTo(0, -radius * 0.8);
+        ctx.lineTo(radius * 0.4, -radius * 0.6);
+        ctx.lineTo(0, -radius * 0.4);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    /**
+     * Draw an orange
+     */
+    drawOrange(ctx, radius, selected) {
+        // Draw orange body
+        const gradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#FFB74D');
+        gradient.addColorStop(1, '#FF9800');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (selected) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Draw texture dots
+        ctx.fillStyle = 'rgba(230, 120, 0, 0.3)';
+        for (let i = 0; i < 12; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * radius * 0.7;
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            ctx.beginPath();
+            ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw small leaf
+        ctx.fillStyle = '#66BB6A';
+        ctx.beginPath();
+        ctx.ellipse(0, -radius * 0.9, radius * 0.15, radius * 0.25, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * Draw a pink dragon fruit
+     */
+    drawBanana(ctx, radius, selected) {
+        // Draw dragon fruit body (oval shape)
+        const gradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#FF69B4');
+        gradient.addColorStop(0.7, '#FF1493');
+        gradient.addColorStop(1, '#C71585');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * 0.85, radius, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (selected) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Draw scale-like texture pattern
+        ctx.fillStyle = 'rgba(144, 238, 144, 0.7)';
+        for (let row = -2; row <= 2; row++) {
+            for (let col = -2; col <= 2; col++) {
+                const x = col * radius * 0.35;
+                const y = row * radius * 0.35;
+                const dist = Math.sqrt(x * x + y * y);
+                if (dist < radius * 0.85) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x - radius * 0.1, y - radius * 0.15);
+                    ctx.lineTo(x + radius * 0.1, y - radius * 0.15);
+                    ctx.closePath();
+                    ctx.fill();
+                }
             }
+        }
+
+        // Draw green leafy top
+        ctx.fillStyle = '#7CB342';
+        const leafCount = 6;
+        for (let i = 0; i < leafCount; i++) {
+            const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;
+            ctx.save();
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.ellipse(0, -radius * 0.9, radius * 0.15, radius * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         }
+
+        // Add white seeds/dots inside
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        for (let i = 0; i < 12; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * radius * 0.6;
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            ctx.beginPath();
+            ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    /**
+     * Draw green apple
+     */
+    drawGrape(ctx, radius, selected) {
+        // Draw apple body (slightly wider at bottom)
+        const appleGradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.35, 0, 0, 0, radius * 1.1);
+        appleGradient.addColorStop(0, '#A8E063');
+        appleGradient.addColorStop(0.6, '#8BC34A');
+        appleGradient.addColorStop(1, '#689F38');
+        ctx.fillStyle = appleGradient;
+        
+        // Apple body shape
+        ctx.beginPath();
+        ctx.ellipse(0, radius * 0.1, radius * 0.9, radius, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (selected) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Draw indent at top
+        ctx.fillStyle = '#689F38';
+        ctx.beginPath();
+        ctx.ellipse(0, -radius * 0.7, radius * 0.2, radius * 0.15, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Draw brown stem
+        ctx.fillStyle = '#6D4C41';
+        ctx.beginPath();
+        ctx.rect(-radius * 0.08, -radius * 0.95, radius * 0.16, radius * 0.35);
+        ctx.fill();
+
+        // Draw leaf
+        ctx.fillStyle = '#66BB6A';
+        ctx.save();
+        ctx.translate(radius * 0.25, -radius * 0.85);
+        ctx.rotate(0.4);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * 0.3, radius * 0.15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Leaf vein
+        ctx.strokeStyle = '#558B2F';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.25, 0);
+        ctx.lineTo(radius * 0.25, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        // Add highlight for shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.4, -radius * 0.2, radius * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Small highlight dot
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.35, -radius * 0.15, radius * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * Draw blueberry (blue)
+     */
+    drawBlueberry(ctx, radius, selected) {
+        // Draw blueberry body
+        const gradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
+        gradient.addColorStop(0, '#64B5F6');
+        gradient.addColorStop(1, '#1976D2');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (selected) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Draw crown at top
+        ctx.fillStyle = '#424242';
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+            const x = Math.cos(angle) * radius * 0.3;
+            const y = Math.sin(angle) * radius * 0.3 - radius * 0.7;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * Draw plum (purple)
+     */
+    /**
+     * Draw purple grapes
+     */
+    drawPlum(ctx, radius, selected) {
+        const grapeRadius = radius * 0.32;
+        
+        // Draw purple grape cluster
+        const positions = [
+            [0, -radius * 0.4],
+            [-grapeRadius * 0.85, -radius * 0.15],
+            [grapeRadius * 0.85, -radius * 0.15],
+            [-grapeRadius * 1.3, radius * 0.15],
+            [0, radius * 0.15],
+            [grapeRadius * 1.3, radius * 0.15],
+            [-grapeRadius * 0.85, radius * 0.5],
+            [grapeRadius * 0.85, radius * 0.5],
+            [0, radius * 0.7]
+        ];
+
+        positions.forEach(([x, y]) => {
+            const grapeGradient = ctx.createRadialGradient(x - grapeRadius * 0.3, y - grapeRadius * 0.3, 0, x, y, grapeRadius);
+            grapeGradient.addColorStop(0, '#BA68C8');
+            grapeGradient.addColorStop(0.6, '#9C27B0');
+            grapeGradient.addColorStop(1, '#6A1B9A');
+            ctx.fillStyle = grapeGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, grapeRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add highlight to each grape
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(x - grapeRadius * 0.25, y - grapeRadius * 0.25, grapeRadius * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        if (selected) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 1.3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Draw brown stem at top
+        ctx.strokeStyle = '#795548';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.6);
+        ctx.lineTo(0, -radius * 1.0);
+        ctx.stroke();
+
+        // Draw green leaf
+        ctx.fillStyle = '#66BB6A';
+        ctx.save();
+        ctx.translate(radius * 0.35, -radius * 0.9);
+        ctx.rotate(0.5);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * 0.28, radius * 0.16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Leaf vein
+        ctx.strokeStyle = '#558B2F';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.25, 0);
+        ctx.lineTo(radius * 0.25, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        // Add another leaf on the other side
+        ctx.fillStyle = '#66BB6A';
+        ctx.save();
+        ctx.translate(-radius * 0.3, -radius * 0.95);
+        ctx.rotate(-0.4);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * 0.25, radius * 0.14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
     }
 
     /**
@@ -450,15 +784,15 @@ class GemRenderer {
         // Get base color for the gem type
         const baseColor = this.getGemColorHex(color);
 
-        // Draw rocket body with gradient (NO base gem) - using gem color
+        // Draw rocket body with darker, more solid gradient for visibility
         const rocketGradient = ctx.createLinearGradient(
             0, -radius * 0.6,
             0, radius * 0.6
         );
-        // Use lighter tint of the gem color
-        const lightColor = this.lightenColor(baseColor, 30);
-        const medColor = baseColor;
-        const darkColor = this.darkenColor(baseColor, 30);
+        // Use much darker colors for better visibility against fruits
+        const lightColor = this.darkenColor(baseColor, 0.2);
+        const medColor = this.darkenColor(baseColor, 0.4);
+        const darkColor = this.darkenColor(baseColor, 0.6);
 
         rocketGradient.addColorStop(0, lightColor);
         rocketGradient.addColorStop(0.5, medColor);
@@ -474,6 +808,11 @@ class GemRenderer {
             ctx.beginPath();
             ctx.ellipse(0, 0, radius * 0.8, radius * 0.5, 0, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Add dark outline for visibility
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.stroke();
 
             // Rocket nose cone
             ctx.fillStyle = '#FFD700';
@@ -483,19 +822,29 @@ class GemRenderer {
             ctx.lineTo(radius * 0.4, radius * 0.3);
             ctx.closePath();
             ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
             // Rocket fins (bottom)
-            ctx.fillStyle = '#FF8800';
+            ctx.fillStyle = '#FF4400';
             ctx.beginPath();
             ctx.moveTo(-radius * 0.7, -radius * 0.5);
             ctx.lineTo(-radius * 0.9, -radius * 0.7);
             ctx.lineTo(-radius * 0.5, -radius * 0.5);
             ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
             ctx.beginPath();
             ctx.moveTo(-radius * 0.7, radius * 0.5);
             ctx.lineTo(-radius * 0.9, radius * 0.7);
             ctx.lineTo(-radius * 0.5, radius * 0.5);
             ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
             // Window
             ctx.fillStyle = '#87CEEB';
@@ -534,6 +883,11 @@ class GemRenderer {
             ctx.beginPath();
             ctx.ellipse(0, 0, radius * 0.5, radius * 0.8, 0, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Add dark outline for visibility
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.stroke();
 
             // Rocket nose cone
             ctx.fillStyle = '#FFD700';
@@ -543,19 +897,29 @@ class GemRenderer {
             ctx.lineTo(radius * 0.3, -radius * 0.4);
             ctx.closePath();
             ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
             // Rocket fins (bottom)
-            ctx.fillStyle = '#FF8800';
+            ctx.fillStyle = '#FF4400';
             ctx.beginPath();
             ctx.moveTo(-radius * 0.5, radius * 0.7);
             ctx.lineTo(-radius * 0.7, radius * 0.9);
             ctx.lineTo(-radius * 0.5, radius * 0.5);
             ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
             ctx.beginPath();
             ctx.moveTo(radius * 0.5, radius * 0.7);
             ctx.lineTo(radius * 0.7, radius * 0.9);
             ctx.lineTo(radius * 0.5, radius * 0.5);
             ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
             // Window
             ctx.fillStyle = '#87CEEB';
@@ -742,44 +1106,54 @@ class GemRenderer {
         const radius = size / 2;
         const now = Date.now();
 
-        // Animated rainbow gradient - FULL SIZE
-        const rotation = (now / 2000) % (Math.PI * 2);
-
-        ctx.save();
-        ctx.rotate(rotation);
-
-        // Create multi-layered rainbow effect - LARGER
+        // 7 rainbow colors
         const colors = [
             '#FF0000', // Red
             '#FF7F00', // Orange
             '#FFFF00', // Yellow
             '#00FF00', // Green
-            '#0000FF', // Blue
+            '#00BFFF', // Blue (Sky Blue for better visibility)
             '#4B0082', // Indigo
             '#9400D3'  // Violet
         ];
 
-        // Draw rainbow layers as full gem
-        for (let i = 0; i < colors.length; i++) {
-            const layerRadius = radius * (1 - i / colors.length * 0.25);
-            const gradient = ctx.createRadialGradient(
-                -layerRadius * 0.2, -layerRadius * 0.2, 0,
-                0, 0, layerRadius
-            );
+        // Draw rainbow as colored segments/stripes
+        const segmentAngle = (Math.PI * 2) / colors.length;
+        const rotation = (now / 2000) % (Math.PI * 2);
 
-            gradient.addColorStop(0, this.lightenColor(colors[i], 0.6));
-            gradient.addColorStop(0.6, colors[i]);
-            gradient.addColorStop(1, this.darkenColor(colors[i], 0.2));
+        ctx.save();
+        ctx.rotate(rotation);
+
+        // Draw each color as a pie segment
+        colors.forEach((color, i) => {
+            const startAngle = i * segmentAngle;
+            const endAngle = (i + 1) * segmentAngle;
+            
+            // Create gradient for depth
+            const gradient = ctx.createRadialGradient(
+                -radius * 0.2, -radius * 0.2, 0,
+                0, 0, radius
+            );
+            gradient.addColorStop(0, this.lightenColor(color, 0.4));
+            gradient.addColorStop(0.7, color);
+            gradient.addColorStop(1, this.darkenColor(color, 0.3));
 
             ctx.beginPath();
-            ctx.arc(0, 0, layerRadius, 0, Math.PI * 2);
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, radius, startAngle, endAngle);
+            ctx.closePath();
             ctx.fillStyle = gradient;
             ctx.fill();
-        }
+            
+            // Add subtle border between segments
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
 
         ctx.restore();
 
-        // Draw larger sparkling stars around the gem
+        // Draw sparkling stars around the gem
         ctx.save();
         for (let i = 0; i < 8; i++) {
             const angle = (i * Math.PI / 4) + (now / 1000);
@@ -791,7 +1165,7 @@ class GemRenderer {
             const brightness = 0.5 + Math.sin(now / 300 + i) * 0.5;
             ctx.globalAlpha = brightness;
 
-            // Draw 4-point star - LARGER
+            // Draw 4-point star
             ctx.fillStyle = '#FFFFFF';
             ctx.shadowColor = '#FFFFFF';
             ctx.shadowBlur = 10;
@@ -814,24 +1188,24 @@ class GemRenderer {
         }
         ctx.restore();
 
-        // Draw white outline with golden glow - LARGER
+        // Draw white outline with golden glow
         ctx.globalAlpha = 1;
         ctx.strokeStyle = '#FFD700';
         ctx.lineWidth = 4;
         ctx.shadowColor = '#FFD700';
         ctx.shadowBlur = 15;
         ctx.beginPath();
-        ctx.arc(0, 0, radius * 0.95, 0, Math.PI * 2);
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.stroke();
 
         // Reset shadow
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
 
-        // Add shimmering highlight - LARGER
+        // Add shimmering highlight
         const shimmer = Math.sin(now / 400) * 0.3 + 0.7;
         ctx.globalAlpha = shimmer * 0.9;
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.beginPath();
         ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.3, 0, Math.PI * 2);
         ctx.fill();
@@ -917,6 +1291,143 @@ class GemRenderer {
         const b = Math.round(b1 * (1 - ratio) + b2 * ratio);
 
         return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    /**
+     * Draw star collectible
+     */
+    drawStarCollectible(ctx, size) {
+        const radius = size / 2;
+        
+        ctx.save();
+        
+        // Golden star
+        ctx.fillStyle = '#FFD700';
+        ctx.strokeStyle = '#FFA500';
+        ctx.lineWidth = 2;
+        
+        // Draw 5-pointed star
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+            const x = Math.cos(angle) * radius * 0.8;
+            const y = Math.sin(angle) * radius * 0.8;
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+            
+            // Inner point
+            const innerAngle = angle + (2 * Math.PI / 5);
+            const innerX = Math.cos(innerAngle) * radius * 0.3;
+            const innerY = Math.sin(innerAngle) * radius * 0.3;
+            ctx.lineTo(innerX, innerY);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Add sparkle
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    /**
+     * Draw sun collectible
+     */
+    drawSunCollectible(ctx, size) {
+        const radius = size / 2;
+        
+        ctx.save();
+        
+        // Sun rays
+        ctx.strokeStyle = '#FFA500';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 12; i++) {
+            const angle = (i * Math.PI / 6);
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(angle) * radius * 0.6, Math.sin(angle) * radius * 0.6);
+            ctx.lineTo(Math.cos(angle) * radius * 0.9, Math.sin(angle) * radius * 0.9);
+            ctx.stroke();
+        }
+        
+        // Sun circle
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.6);
+        gradient.addColorStop(0, '#FFF700');
+        gradient.addColorStop(0.5, '#FFD700');
+        gradient.addColorStop(1, '#FFA500');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.2, -radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    /**
+     * Draw moon collectible
+     */
+    drawMoonCollectible(ctx, size) {
+        const radius = size / 2;
+        
+        ctx.save();
+        
+        // Moon crescent
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.8);
+        gradient.addColorStop(0, '#F0F0F0');
+        gradient.addColorStop(0.7, '#E0E0E0');
+        gradient.addColorStop(1, '#C0C0C0');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Create crescent by cutting out a circle
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(radius * 0.3, 0, radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // Add craters
+        ctx.fillStyle = 'rgba(180, 180, 180, 0.4)';
+        ctx.beginPath();
+        ctx.arc(-radius * 0.2, -radius * 0.3, radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(-radius * 0.3, radius * 0.2, radius * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add stars around moon
+        ctx.fillStyle = '#FFFFFF';
+        const starPositions = [
+            [radius * 0.9, -radius * 0.5],
+            [radius * 0.7, radius * 0.7],
+            [-radius * 0.8, -radius * 0.6]
+        ];
+        
+        starPositions.forEach(([x, y]) => {
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        ctx.restore();
     }
 
     /**
