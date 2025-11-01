@@ -316,37 +316,89 @@ class AudioManager {
     }
 
     /**
-     * Play background music using Web Audio API
+     * Play background music using Web Audio API with multiple instruments
      */
     playBackgroundMusic(trackName) {
         if (!this.audioContext) return;
 
-        const melodies = {
-            gameplay: [
-                { note: 440, duration: 0.3 },
-                { note: 523, duration: 0.3 },
-                { note: 587, duration: 0.3 },
-                { note: 659, duration: 0.3 },
-                { note: 523, duration: 0.3 },
-                { note: 587, duration: 0.3 },
-                { note: 440, duration: 0.6 },
-                { note: 0, duration: 0.3 }
-            ],
-            menu: [
-                { note: 523, duration: 0.4 },
-                { note: 659, duration: 0.4 },
-                { note: 784, duration: 0.8 }
-            ],
-            victory: [
-                { note: 523, duration: 0.2 },
-                { note: 659, duration: 0.2 },
-                { note: 784, duration: 0.2 },
-                { note: 1047, duration: 0.6 }
-            ]
+        const tracks = {
+            gameplay: {
+                melody: [
+                    { note: 523.25, duration: 0.3 }, { note: 587.33, duration: 0.15 },
+                    { note: 659.25, duration: 0.15 }, { note: 698.46, duration: 0.3 },
+                    { note: 659.25, duration: 0.15 }, { note: 587.33, duration: 0.15 },
+                    { note: 523.25, duration: 0.3 }, { note: 392.00, duration: 0.3 },
+                    { note: 523.25, duration: 0.3 }, { note: 587.33, duration: 0.3 },
+                    { note: 659.25, duration: 0.6 }, { note: 587.33, duration: 0.3 },
+                    { note: 523.25, duration: 0.3 }, { note: 587.33, duration: 0.3 },
+                    { note: 523.25, duration: 0.6 }, { note: 0, duration: 0.15 }
+                ],
+                bass: [
+                    { note: 130.81, duration: 0.6 }, { note: 146.83, duration: 0.6 },
+                    { note: 196.00, duration: 0.6 }, { note: 130.81, duration: 0.6 },
+                    { note: 130.81, duration: 0.6 }, { note: 146.83, duration: 0.6 },
+                    { note: 196.00, duration: 0.6 }, { note: 130.81, duration: 0.75 }
+                ],
+                chords: [
+                    { notes: [261.63, 329.63, 392.00], duration: 1.2 },
+                    { notes: [293.66, 369.99, 440.00], duration: 1.2 },
+                    { notes: [196.00, 246.94, 293.66], duration: 1.2 },
+                    { notes: [261.63, 329.63, 392.00], duration: 1.35 }
+                ],
+                percussion: 0.6
+            },
+            menu: {
+                melody: [
+                    { note: 523.25, duration: 0.4 }, { note: 659.25, duration: 0.4 },
+                    { note: 523.25, duration: 0.4 }, { note: 587.33, duration: 0.4 },
+                    { note: 523.25, duration: 0.4 }, { note: 698.46, duration: 0.4 },
+                    { note: 659.25, duration: 0.8 }, { note: 0, duration: 0.2 },
+                    { note: 392.00, duration: 0.4 }, { note: 523.25, duration: 0.4 },
+                    { note: 392.00, duration: 0.4 }, { note: 440.00, duration: 0.4 },
+                    { note: 523.25, duration: 0.8 }, { note: 0, duration: 0.2 }
+                ],
+                bass: [
+                    { note: 130.81, duration: 0.8 }, { note: 174.61, duration: 0.8 },
+                    { note: 196.00, duration: 0.8 }, { note: 130.81, duration: 0.8 },
+                    { note: 130.81, duration: 0.8 }, { note: 146.83, duration: 0.8 },
+                    { note: 130.81, duration: 1.0 }
+                ],
+                chords: [
+                    { notes: [261.63, 329.63, 392.00], duration: 1.6 },
+                    { notes: [174.61, 220.00, 261.63], duration: 1.6 },
+                    { notes: [196.00, 246.94, 293.66], duration: 1.6 },
+                    { notes: [261.63, 329.63, 392.00], duration: 1.8 }
+                ],
+                percussion: 0.8
+            },
+            victory: {
+                melody: [
+                    { note: 523.25, duration: 0.2 }, { note: 523.25, duration: 0.2 },
+                    { note: 659.25, duration: 0.2 }, { note: 784.00, duration: 0.3 },
+                    { note: 659.25, duration: 0.15 }, { note: 784.00, duration: 0.3 },
+                    { note: 1046.50, duration: 0.6 }, { note: 0, duration: 0.1 },
+                    { note: 784.00, duration: 0.3 }, { note: 659.25, duration: 0.3 },
+                    { note: 784.00, duration: 0.3 }, { note: 1046.50, duration: 0.8 }
+                ],
+                bass: [
+                    { note: 130.81, duration: 0.4 }, { note: 196.00, duration: 0.4 },
+                    { note: 261.63, duration: 0.8 }, { note: 196.00, duration: 0.4 },
+                    { note: 130.81, duration: 0.6 }
+                ],
+                chords: [
+                    { notes: [261.63, 329.63, 392.00], duration: 0.8 },
+                    { notes: [196.00, 246.94, 293.66], duration: 0.8 },
+                    { notes: [261.63, 329.63, 392.00, 523.25], duration: 0.9 }
+                ],
+                percussion: 0.4
+            }
         };
 
-        const melody = melodies[trackName] || melodies.gameplay;
-        const loopDuration = melody.reduce((total, note) => total + note.duration, 0);
+        const track = tracks[trackName] || tracks.gameplay;
+        const loopDuration = Math.max(
+            track.melody.reduce((t, n) => t + n.duration, 0),
+            track.bass.reduce((t, n) => t + n.duration, 0)
+        );
 
         const scheduleLoop = () => {
             if (!this.currentMusic || this.musicMuted || this.currentMusic !== trackName) {
@@ -355,55 +407,256 @@ class AudioManager {
 
             if (this.audioContext.state === 'suspended') {
                 this.audioContext.resume().catch(error => {
-                    console.warn('Unable to resume audio context during music loop:', error);
+                    console.warn('Unable to resume audio context:', error);
                 });
             }
 
             const startTime = this.audioContext.currentTime + 0.05;
+
+            // Play melody (lead - triangle wave)
             let cursor = startTime;
-
-            melody.forEach(note => {
-                if (!this.currentMusic || this.musicMuted || this.currentMusic !== trackName) {
-                    return;
-                }
-
+            track.melody.forEach((note) => {
                 if (note.note > 0) {
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
-
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(note.note, cursor);
-
-                    const peakGain = Math.max(this.musicVolume * 0.18, 0.005);
-                    gainNode.gain.setValueAtTime(peakGain, cursor);
-
-                    const fadeOutStart = cursor + Math.max(note.duration - 0.05, 0.01);
-                    gainNode.gain.setTargetAtTime(0.0001, fadeOutStart, 0.02);
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-
-                    const nodeRef = { oscillator, gainNode };
-                    this.musicNodes.add(nodeRef);
-
-                    oscillator.onended = () => {
-                        oscillator.onended = null;
-                        try { oscillator.disconnect(); } catch (error) { /* noop */ }
-                        try { gainNode.disconnect(); } catch (error) { /* noop */ }
-                        this.musicNodes.delete(nodeRef);
-                    };
-
-                    oscillator.start(cursor);
-                    oscillator.stop(cursor + note.duration);
+                    this.playNote(note.note, cursor, note.duration, 'triangle', 0.12);
                 }
-
                 cursor += note.duration;
             });
+
+            // Play bass (sine wave - deep)
+            cursor = startTime;
+            track.bass.forEach((note) => {
+                this.playNote(note.note, cursor, note.duration, 'sine', 0.15);
+                cursor += note.duration;
+            });
+
+            // Play chords (sawtooth - rich)
+            cursor = startTime;
+            track.chords.forEach((chord) => {
+                chord.notes.forEach(note => {
+                    this.playNote(note, cursor, chord.duration, 'sawtooth', 0.04);
+                });
+                cursor += chord.duration;
+            });
+
+            // Add percussion (hi-hat, kick, snare)
+            if (track.percussion) {
+                cursor = startTime;
+                const beatCount = Math.floor(loopDuration / track.percussion);
+                for (let i = 0; i < beatCount; i++) {
+                    // Hi-hat on every beat
+                    this.playHiHat(cursor, 0.05);
+
+                    // Kick drum on beats 1 and 3 (0, 2, 4...)
+                    if (i % 2 === 0) {
+                        this.playKick(cursor, 0.15);
+                    }
+
+                    // Snare on beats 2 and 4 (1, 3, 5...)
+                    if (i % 2 === 1) {
+                        this.playSnare(cursor, 0.12);
+                    }
+
+                    cursor += track.percussion;
+                }
+            }
 
             this.musicTimeout = setTimeout(scheduleLoop, Math.max(loopDuration * 1000 - 40, 100));
         };
 
         scheduleLoop();
+    }
+
+    /**
+     * Play a single note
+     */
+    playNote(frequency, startTime, duration, waveType = 'sine', volume = 0.1) {
+        if (!this.audioContext || !this.currentMusic || this.musicMuted) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+
+        oscillator.type = waveType;
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, startTime);
+        filter.Q.setValueAtTime(1, startTime);
+
+        const peakGain = Math.max(this.musicVolume * volume, 0.003);
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(peakGain, startTime + 0.02);
+
+        const fadeOutStart = startTime + Math.max(duration - 0.05, 0.01);
+        gainNode.gain.setValueAtTime(peakGain, fadeOutStart);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        const nodeRef = { oscillator, gainNode, filter };
+        this.musicNodes.add(nodeRef);
+
+        oscillator.onended = () => {
+            try { oscillator.disconnect(); } catch (e) { }
+            try { filter.disconnect(); } catch (e) { }
+            try { gainNode.disconnect(); } catch (e) { }
+            this.musicNodes.delete(nodeRef);
+        };
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+    }
+
+    /**
+     * Play hi-hat sound
+     */
+    playHiHat(startTime, duration) {
+        if (!this.audioContext || !this.currentMusic || this.musicMuted) return;
+
+        const bufferSize = this.audioContext.sampleRate * duration;
+        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.audioContext.createBufferSource();
+        const filter = this.audioContext.createBiquadFilter();
+        const gainNode = this.audioContext.createGain();
+
+        noise.buffer = buffer;
+
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(8000, startTime);
+
+        const peakGain = Math.max(this.musicVolume * 0.08, 0.002);
+        gainNode.gain.setValueAtTime(peakGain, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        const nodeRef = { noise, filter, gainNode };
+        this.musicNodes.add(nodeRef);
+
+        noise.onended = () => {
+            try { noise.disconnect(); } catch (e) { }
+            try { filter.disconnect(); } catch (e) { }
+            try { gainNode.disconnect(); } catch (e) { }
+            this.musicNodes.delete(nodeRef);
+        };
+
+        noise.start(startTime);
+        noise.stop(startTime + duration);
+    }
+
+    /**
+     * Play kick drum sound
+     */
+    playKick(startTime, duration) {
+        if (!this.audioContext || !this.currentMusic || this.musicMuted) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.type = 'sine';
+
+        // Pitch sweep from 150Hz to 40Hz for that classic kick sound
+        oscillator.frequency.setValueAtTime(150, startTime);
+        oscillator.frequency.exponentialRampToValueAtTime(40, startTime + 0.05);
+
+        const peakGain = Math.max(this.musicVolume * 0.25, 0.005);
+        gainNode.gain.setValueAtTime(peakGain, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        const nodeRef = { oscillator, gainNode };
+        this.musicNodes.add(nodeRef);
+
+        oscillator.onended = () => {
+            try { oscillator.disconnect(); } catch (e) { }
+            try { gainNode.disconnect(); } catch (e) { }
+            this.musicNodes.delete(nodeRef);
+        };
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+    }
+
+    /**
+     * Play snare drum sound
+     */
+    playSnare(startTime, duration) {
+        if (!this.audioContext || !this.currentMusic || this.musicMuted) return;
+
+        // Snare = tonal component + noise
+
+        // Tonal component (pitched)
+        const oscillator = this.audioContext.createOscillator();
+        const oscillatorGain = this.audioContext.createGain();
+
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(200, startTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, startTime + 0.05);
+
+        const tonalPeakGain = Math.max(this.musicVolume * 0.1, 0.003);
+        oscillatorGain.gain.setValueAtTime(tonalPeakGain, startTime);
+        oscillatorGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.connect(oscillatorGain);
+        oscillatorGain.connect(this.audioContext.destination);
+
+        // Noise component
+        const bufferSize = this.audioContext.sampleRate * duration;
+        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.audioContext.createBufferSource();
+        const noiseFilter = this.audioContext.createBiquadFilter();
+        const noiseGain = this.audioContext.createGain();
+
+        noise.buffer = buffer;
+
+        noiseFilter.type = 'highpass';
+        noiseFilter.frequency.setValueAtTime(1000, startTime);
+
+        const noisePeakGain = Math.max(this.musicVolume * 0.12, 0.003);
+        noiseGain.gain.setValueAtTime(noisePeakGain, startTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.audioContext.destination);
+
+        const nodeRef = { oscillator, oscillatorGain, noise, noiseFilter, noiseGain };
+        this.musicNodes.add(nodeRef);
+
+        oscillator.onended = () => {
+            try { oscillator.disconnect(); } catch (e) { }
+            try { oscillatorGain.disconnect(); } catch (e) { }
+            this.musicNodes.delete(nodeRef);
+        };
+
+        noise.onended = () => {
+            try { noise.disconnect(); } catch (e) { }
+            try { noiseFilter.disconnect(); } catch (e) { }
+            try { noiseGain.disconnect(); } catch (e) { }
+        };
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+        noise.start(startTime);
+        noise.stop(startTime + duration);
     }
 
     /**
