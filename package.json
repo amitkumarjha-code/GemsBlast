@@ -1,0 +1,33 @@
+{
+  "name": "gemsblast-game",
+  "version": "1.0.0",
+  "description": "A web-based match-3 puzzle game inspired by Seekers Notes",
+  "main": "index.html",
+  "homepage": "https://amitkumarjha-code.github.io/GemsBlast",
+  "scripts": {
+    "start": "npx http-server . -p 8080",
+    "dev": "npx live-server --port=8080",
+    "build": "echo 'Build process will be added later'",
+    "test": "echo 'Tests will be added later'",
+    "predeploy": "echo 'Preparing to deploy to GitHub Pages'",
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": [
+    "game",
+    "match-3",
+    "gemsblast",
+    "puzzle",
+    "web-game"
+  ],
+  "author": "Amit Kumar Jha",
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^6.3.0",
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amitkumarjha-code/GemsBlast.git"
+  }
+}
