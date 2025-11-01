@@ -345,6 +345,12 @@ class AudioManager {
                     { notes: [196.00, 246.94, 293.66], duration: 1.2 },
                     { notes: [261.63, 329.63, 392.00], duration: 1.35 }
                 ],
+                guitar: [
+                    { notes: [261.63, 329.63], duration: 0.3 }, { notes: [0], duration: 0.3 },
+                    { notes: [293.66, 369.99], duration: 0.3 }, { notes: [0], duration: 0.3 },
+                    { notes: [196.00, 246.94], duration: 0.3 }, { notes: [0], duration: 0.3 },
+                    { notes: [261.63, 329.63], duration: 0.3 }, { notes: [0], duration: 0.45 }
+                ],
                 percussion: 0.6
             },
             menu: {
@@ -369,6 +375,12 @@ class AudioManager {
                     { notes: [196.00, 246.94, 293.66], duration: 1.6 },
                     { notes: [261.63, 329.63, 392.00], duration: 1.8 }
                 ],
+                guitar: [
+                    { notes: [261.63, 329.63], duration: 0.4 }, { notes: [0], duration: 0.4 },
+                    { notes: [174.61, 220.00], duration: 0.4 }, { notes: [0], duration: 0.4 },
+                    { notes: [196.00, 246.94], duration: 0.4 }, { notes: [0], duration: 0.4 },
+                    { notes: [261.63, 329.63], duration: 0.4 }, { notes: [0], duration: 0.6 }
+                ],
                 percussion: 0.8
             },
             victory: {
@@ -389,6 +401,11 @@ class AudioManager {
                     { notes: [261.63, 329.63, 392.00], duration: 0.8 },
                     { notes: [196.00, 246.94, 293.66], duration: 0.8 },
                     { notes: [261.63, 329.63, 392.00, 523.25], duration: 0.9 }
+                ],
+                guitar: [
+                    { notes: [261.63, 329.63], duration: 0.2 }, { notes: [0], duration: 0.2 },
+                    { notes: [196.00, 246.94], duration: 0.2 }, { notes: [0], duration: 0.2 },
+                    { notes: [261.63, 329.63, 392.00], duration: 0.3 }, { notes: [0], duration: 0.5 }
                 ],
                 percussion: 0.4
             }
@@ -437,6 +454,17 @@ class AudioManager {
                 });
                 cursor += chord.duration;
             });
+
+            // Play guitar (bright, strummed)
+            if (track.guitar) {
+                cursor = startTime;
+                track.guitar.forEach((strum) => {
+                    if (strum.notes[0] > 0) {
+                        this.playGuitar(strum.notes, cursor, strum.duration);
+                    }
+                    cursor += strum.duration;
+                });
+            }
 
             // Add percussion (hi-hat, kick, snare)
             if (track.percussion) {
@@ -507,6 +535,56 @@ class AudioManager {
 
         oscillator.start(startTime);
         oscillator.stop(startTime + duration);
+    }
+
+    /**
+     * Play guitar strum with bright, percussive attack
+     */
+    playGuitar(frequencies, startTime, duration) {
+        if (!this.audioContext || !this.currentMusic || this.musicMuted) return;
+
+        // Strum effect - notes slightly offset
+        frequencies.forEach((freq, index) => {
+            const strumOffset = index * 0.01; // 10ms strum delay per note
+            const noteStart = startTime + strumOffset;
+
+            // Use square wave for bright, guitar-like tone
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            const filter = this.audioContext.createBiquadFilter();
+
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(freq, noteStart);
+
+            // Bandpass filter for guitar-like tone
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(freq * 2, noteStart);
+            filter.Q.setValueAtTime(2, noteStart);
+
+            // Sharp attack, quick decay (guitar pluck)
+            const peakGain = Math.max(this.musicVolume * 0.08, 0.002);
+            gainNode.gain.setValueAtTime(0, noteStart);
+            gainNode.gain.linearRampToValueAtTime(peakGain, noteStart + 0.005); // Fast attack
+            gainNode.gain.exponentialRampToValueAtTime(peakGain * 0.3, noteStart + 0.1); // Initial decay
+            gainNode.gain.exponentialRampToValueAtTime(0.001, noteStart + duration);
+
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            const nodeRef = { oscillator, gainNode, filter };
+            this.musicNodes.add(nodeRef);
+
+            oscillator.onended = () => {
+                try { oscillator.disconnect(); } catch (e) { }
+                try { filter.disconnect(); } catch (e) { }
+                try { gainNode.disconnect(); } catch (e) { }
+                this.musicNodes.delete(nodeRef);
+            };
+
+            oscillator.start(noteStart);
+            oscillator.stop(noteStart + duration);
+        });
     }
 
     /**
