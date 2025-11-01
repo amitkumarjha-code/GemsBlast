@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        <meta name="description" content="GemsBlast - A match-3 puzzle game inspired by Seekers Notes">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <title>GemsBlast Game</title>
+
+        <!-- Preconnect for performance -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+        <!-- Google Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap"
+            rel="stylesheet">
+
+        <!-- Stylesheets -->
+        <link rel="stylesheet" href="src/css/main.css">
+        <link rel="stylesheet" href="src/css/animations.css">
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    </head>
+
+    <body>
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-content">
+                <h1 class="loading-title">✨ GemsBlast ✨</h1>
+                <div class="loading-gems">
+                    <span class="loading-gem" style="animation-delay: 0s;">💎</span>
+                    <span class="loading-gem" style="animation-delay: 0.2s;">💎</span>
+                    <span class="loading-gem" style="animation-delay: 0.4s;">💎</span>
+                    <span class="loading-gem" style="animation-delay: 0.6s;">💎</span>
+                    <span class="loading-gem" style="animation-delay: 0.8s;">💎</span>
+                </div>
+                <div class="loading-progress-bar">
+                    <div id="loading-progress-fill" class="loading-progress-fill"></div>
+                </div>
+                <p class="loading-text" id="loading-text">Preparing magical gems...</p>
+                <p class="loading-percent" id="loading-percent">0%</p>
+            </div>
+        </div>
+
+        <!-- Main Game Container -->
+        <div id="game-container" class="game-container hidden">
+            <!-- Header Section -->
+            <header class="game-header">
+                <div class="header-left">
+                    <button id="menu-btn" class="icon-btn" aria-label="Menu">
+                        <span class="hamburger"></span>
+                    </button>
+                    <h1 class="game-title">GemsBlast</h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="score-display">
+                        <span class="score-label">Score:</span>
+                        <span id="score-value" class="score-value">0</span>
+                    </div>
+                    <button id="settings-btn" class="icon-btn" aria-label="Settings" title="Settings">
+                        ⚙️
+                    </button>
+                    <button id="sfx-toggle-btn" class="icon-btn" aria-label="Toggle Sound Effects"
+                        title="Toggle Sound Effects">
+                        🔊
+                    </button>
+                    <button id="music-toggle-btn" class="icon-btn" aria-label="Toggle Music" title="Toggle Music">
+                        🎵
+                    </button>
+                    <button id="pause-btn" class="icon-btn" aria-label="Pause">⏸️</button>
+                </div>
+            </header>
+
+            <!-- Game Info Panel -->
+            <div class="game-info">
+                <div class="timer-container">
+                    <span class="timer-label">Time:</span>
+                    <span id="timer-display" class="timer-display">2:00</span>
+                </div>
+
+                <div class="objective-container">
+                    <span class="objective-label">Goal:</span>
+                    <div id="objective-display" class="objective-display">
+                        <span>Match 20 red gems</span>
+                    </div>
+                </div>
+
+                <div class="moves-container">
+                    <span class="moves-label">Moves:</span>
+                    <span id="moves-display" class="moves-display">30</span>
+                </div>
+            </div>
+
+            <!-- Main Game Area -->
+            <main class="game-main">
+                <!-- Game Board Container -->
+                <div class="board-container">
+                    <canvas id="game-canvas" class="game-canvas" width="640" height="640"></canvas>
+
+                    <!-- Board Overlay for UI elements -->
+                    <div id="board-overlay" class="board-overlay">
+                        <!-- Particle effects and animations will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Side Panel (for tools and power-ups) -->
+                <aside class="side-panel">
+                    <div class="tools-section">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <h3 class="section-title" style="margin: 0;">Power-ups</h3>
+                            <button id="powerup-help-btn" class="help-btn"
+                                style="background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0.25rem; color: var(--text-secondary);"
+                                title="Learn about Power-ups">
+                                ❓
+                            </button>
+                        </div>
+                        <div class="tools-grid">
+                            <button class="tool-btn" id="rocket-tool" data-tool="hammer"
+                                title="Hammer - Remove any gem">
+                                <span class="tool-icon">�</span>
+                                <span class="tool-count">0</span>
+                            </button>
+                            <button class="tool-btn" id="time-tool" data-tool="shuffle"
+                                title="Shuffle - Shuffle the board">
+                                <span class="tool-icon">🔀</span>
+                                <span class="tool-count">0</span>
+                            </button>
+                            <button class="tool-btn" id="glove-tool" data-tool="color_bomb"
+                                title="Color Bomb - Remove all gems of one color">
+                                <span class="tool-icon">💣</span>
+                                <span class="tool-count">0</span>
+                            </button>
+                            <button class="tool-btn" id="arrow-tool" data-tool="extra_moves"
+                                title="Extra Moves - Add 5 moves">
+                                <span class="tool-icon">➕</span>
+                                <span class="tool-count">0</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="progress-section">
+                        <h3 class="section-title">Progress</h3>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p class="progress-text" id="progress-text">0 / 20 collected</p>
+                    </div>
+                </aside>
+            </main>
+
+            <!-- Bottom Controls -->
+            <footer class="game-footer">
+                <button id="hint-btn" class="control-btn">
+                    <span class="btn-icon">💡</span>
+                    <span class="btn-text">Hint</span>
+                </button>
+
+                <button id="shuffle-btn" class="control-btn">
+                    <span class="btn-icon">🔀</span>
+                    <span class="btn-text">Shuffle</span>
+                </button>
+
+                <button id="restart-btn" class="control-btn">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Restart</span>
+                </button>
+            </footer>
+        </div>
+
+        <!-- Modal Overlays -->
+        <div id="modal-overlay" class="modal-overlay hidden">
+            <!-- Pause Menu -->
+            <div id="pause-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Game Paused</h2>
+                    <div class="modal-buttons">
+                        <button id="resume-btn" class="btn btn-primary">Resume</button>
+                        <button id="restart-game-btn" class="btn btn-secondary">Restart</button>
+                        <button id="stats-btn" class="btn btn-secondary">Statistics</button>
+                        <button id="main-menu-btn" class="btn btn-secondary">Main Menu</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Modal -->
+            <div id="statistics-modal" class="modal hidden">
+                <div class="modal-content statistics-content">
+                    <h2>📊 Your Statistics</h2>
+                    <div id="statistics-display" class="statistics-display">
+                        <!-- Statistics will be dynamically generated -->
+                    </div>
+                    <div class="modal-buttons">
+                        <button id="reset-stats-btn" class="btn btn-danger">Reset Statistics</button>
+                        <button id="close-stats-btn" class="btn btn-primary">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="modal hidden">
+                <div class="modal-content settings-content">
+                    <h2>⚙️ Settings</h2>
+                    <div class="settings-display">
+                        <!-- Audio Settings -->
+                        <div class="settings-section">
+                            <h3>🔊 Audio</h3>
+                            <div class="setting-item">
+                                <label for="sfx-volume">Sound Effects Volume</label>
+                                <div class="slider-container">
+                                    <input type="range" id="sfx-volume" min="0" max="100" value="70"
+                                        class="volume-slider">
+                                    <span id="sfx-volume-value" class="volume-value">70%</span>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label for="music-volume">Music Volume</label>
+                                <div class="slider-container">
+                                    <input type="range" id="music-volume" min="0" max="100" value="50"
+                                        class="volume-slider">
+                                    <span id="music-volume-value" class="volume-value">50%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visual Settings -->
+                        <div class="settings-section">
+                            <h3>🎨 Visual</h3>
+                            <div class="setting-item">
+                                <label for="animation-speed">Animation Speed</label>
+                                <div class="slider-container">
+                                    <input type="range" id="animation-speed" min="50" max="150" value="100"
+                                        class="volume-slider">
+                                    <span id="animation-speed-value" class="volume-value">100%</span>
+                                </div>
+                            </div>
+                            <div class="setting-item setting-toggle">
+                                <label for="particle-effects">Particle Effects</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="particle-effects" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item setting-toggle">
+                                <label for="screen-shake">Screen Shake</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="screen-shake" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item setting-toggle">
+                                <label for="colorblind-mode">Color-Blind Mode</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="colorblind-mode">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label for="board-theme">Board Theme</label>
+                                <select id="board-theme" class="theme-select">
+                                    <option value="classic">🌰 Classic Wood</option>
+                                    <option value="dark">🌙 Dark Night</option>
+                                    <option value="ocean">🌊 Ocean Blue</option>
+                                    <option value="forest">🌲 Forest Green</option>
+                                    <option value="sunset">🌅 Sunset Orange</option>
+                                    <option value="mystic">✨ Mystic Purple</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-buttons">
+                        <button id="reset-settings-btn" class="btn btn-secondary">Reset to Default</button>
+                        <button id="close-settings-btn" class="btn btn-primary">Apply</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level Selection Modal -->
+            <div id="level-selection-modal" class="modal hidden">
+                <div class="modal-content level-selection-content">
+                    <div class="level-selection-header">
+                        <h2>Select Level</h2>
+                        <div class="progress-summary">
+                            <div class="progress-item">
+                                <span class="progress-icon">⭐</span>
+                                <span id="total-stars-display">0/45</span>
+                            </div>
+                            <div class="progress-item">
+                                <span class="progress-icon">✓</span>
+                                <span id="levels-completed-display">0/15</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="level-grid" class="level-grid">
+                        <!-- Level cards will be dynamically generated -->
+                    </div>
+                    <div class="modal-buttons">
+                        <button id="close-level-select-btn" class="btn btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode Selection Modal -->
+            <div id="mode-selection-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Choose Game Mode</h2>
+                    <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Or <button id="show-levels-btn"
+                            style="background: none; border: none; color: var(--accent-color); cursor: pointer; text-decoration: underline; font-size: inherit;">select
+                            a specific level</button>
+                    </p>
+
+                    <!-- Limit Type Selection -->
+                    <div class="limit-type-selector" style="text-align: center; margin-bottom: 1.5rem;">
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Game
+                            Limit:</label>
+                        <div
+                            style="display: inline-flex; gap: 1rem; background: var(--bg-secondary); padding: 0.5rem; border-radius: 8px;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
+                                <input type="radio" name="limit-type" value="time" id="limit-time" checked>
+                                <span>⏱️ Time Limit</span>
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
+                                <input type="radio" name="limit-type" value="moves" id="limit-moves">
+                                <span>🎯 Move Limit</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mode-grid">
+                        <div class="mode-card" data-mode="classic">
+                            <div class="mode-icon">⭐</div>
+                            <h3>Classic</h3>
+                            <p>Reach the target score!</p>
+                        </div>
+                        <div class="mode-card" data-mode="plates">
+                            <div class="mode-icon">🟨</div>
+                            <h3>Plates</h3>
+                            <p>Clear all the golden plates</p>
+                        </div>
+                        <div class="mode-card" data-mode="palette">
+                            <div class="mode-icon">💎</div>
+                            <h3>Palette</h3>
+                            <p>Collect specific colored gems</p>
+                        </div>
+                        <div class="mode-card" data-mode="stargazer">
+                            <div class="mode-icon">🌟</div>
+                            <h3>Stargazer</h3>
+                            <p>Form constellation patterns</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Over Modal -->
+            <div id="game-over-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2 id="game-result-title">Level Complete!</h2>
+                    <div class="score-summary">
+                        <p>Final Score: <span id="final-score">0</span></p>
+                        <div class="stars" id="star-rating">
+                            <span class="star">⭐</span>
+                            <span class="star">⭐</span>
+                            <span class="star">⭐</span>
+                        </div>
+                    </div>
+                    <div class="modal-buttons">
+                        <button id="next-level-btn" class="btn btn-primary">Next Level</button>
+                        <button id="replay-level-btn" class="btn btn-secondary">Replay</button>
+                        <button id="level-menu-btn" class="btn btn-secondary">Level Menu</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tutorial Overlay -->
+            <div id="tutorial-overlay" class="tutorial-overlay hidden">
+                <div class="tutorial-content">
+                    <button id="tutorial-close-btn" class="tutorial-close-btn">×</button>
+                    <div id="tutorial-steps">
+                        <!-- Tutorial steps will be dynamically inserted here -->
+                    </div>
+                    <div class="tutorial-navigation">
+                        <button id="tutorial-prev-btn" class="btn btn-secondary">Previous</button>
+                        <span id="tutorial-step-indicator" class="tutorial-step-indicator">1 / 3</span>
+                        <button id="tutorial-next-btn" class="btn btn-primary">Next</button>
+                        <button id="tutorial-skip-btn" class="btn btn-secondary">Skip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript Files -->
+        <script src="src/js/utils.js"></script>
+        <script src="src/js/particles.js"></script>
+        <script src="src/js/gems.js"></script>
+        <script src="src/js/gamemode.js"></script>
+        <script src="src/js/gamemodes.js"></script>
+        <script src="src/js/powerups.js"></script>
+        <script src="src/js/rewards.js"></script>
+        <script src="src/js/levels.js"></script>
+        <script src="src/js/audio.js"></script>
+        <script src="src/js/statistics.js"></script>
+        <script src="src/js/settings.js"></script>
+        <script src="src/js/performance.js"></script>
+        <script src="src/js/board.js"></script>
+        <script src="src/js/game.js"></script>
+        <script src="src/js/ui.js"></script>
+        <script src="src/js/tutorial.js"></script>
+        <script src="src/js/main.js"></script>
+    </body>
+
+</html>
