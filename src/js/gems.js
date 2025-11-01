@@ -396,9 +396,9 @@ class GemRenderer {
      */
     drawNormalGem(ctx, size, color, selected = false, hint = false) {
         const radius = size / 2;
-        
+
         // Draw different fruit based on color
-        switch(color) {
+        switch (color) {
             case GemColor.RED:
                 this.drawStrawberry(ctx, radius, selected);
                 break;
@@ -455,7 +455,7 @@ class GemRenderer {
         ctx.beginPath();
         ctx.ellipse(0, radius * 0.1, radius * 0.8, radius * 0.9, 0, 0, Math.PI * 2);
         ctx.fill();
-        
+
         if (selected) {
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 3;
@@ -596,7 +596,7 @@ class GemRenderer {
         appleGradient.addColorStop(0.6, '#8BC34A');
         appleGradient.addColorStop(1, '#689F38');
         ctx.fillStyle = appleGradient;
-        
+
         // Apple body shape
         ctx.beginPath();
         ctx.ellipse(0, radius * 0.1, radius * 0.9, radius, 0, 0, Math.PI * 2);
@@ -628,7 +628,7 @@ class GemRenderer {
         ctx.beginPath();
         ctx.ellipse(0, 0, radius * 0.3, radius * 0.15, 0, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Leaf vein
         ctx.strokeStyle = '#558B2F';
         ctx.lineWidth = 1;
@@ -698,7 +698,7 @@ class GemRenderer {
      */
     drawPlum(ctx, radius, selected) {
         const grapeRadius = radius * 0.32;
-        
+
         // Draw purple grape cluster
         const positions = [
             [0, -radius * 0.4],
@@ -721,7 +721,7 @@ class GemRenderer {
             ctx.beginPath();
             ctx.arc(x, y, grapeRadius, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Add highlight to each grape
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.beginPath();
@@ -754,7 +754,7 @@ class GemRenderer {
         ctx.beginPath();
         ctx.ellipse(0, 0, radius * 0.28, radius * 0.16, 0, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Leaf vein
         ctx.strokeStyle = '#558B2F';
         ctx.lineWidth = 1.5;
@@ -808,7 +808,7 @@ class GemRenderer {
             ctx.beginPath();
             ctx.ellipse(0, 0, radius * 0.8, radius * 0.5, 0, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Add dark outline for visibility
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
@@ -836,7 +836,7 @@ class GemRenderer {
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 2;
             ctx.stroke();
-            
+
             ctx.beginPath();
             ctx.moveTo(-radius * 0.7, radius * 0.5);
             ctx.lineTo(-radius * 0.9, radius * 0.7);
@@ -883,7 +883,7 @@ class GemRenderer {
             ctx.beginPath();
             ctx.ellipse(0, 0, radius * 0.5, radius * 0.8, 0, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Add dark outline for visibility
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
@@ -911,7 +911,7 @@ class GemRenderer {
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 2;
             ctx.stroke();
-            
+
             ctx.beginPath();
             ctx.moveTo(radius * 0.5, radius * 0.7);
             ctx.lineTo(radius * 0.7, radius * 0.9);
@@ -1128,7 +1128,7 @@ class GemRenderer {
         colors.forEach((color, i) => {
             const startAngle = i * segmentAngle;
             const endAngle = (i + 1) * segmentAngle;
-            
+
             // Create gradient for depth
             const gradient = ctx.createRadialGradient(
                 -radius * 0.2, -radius * 0.2, 0,
@@ -1144,7 +1144,7 @@ class GemRenderer {
             ctx.closePath();
             ctx.fillStyle = gradient;
             ctx.fill();
-            
+
             // Add subtle border between segments
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.lineWidth = 1;
@@ -1298,27 +1298,27 @@ class GemRenderer {
      */
     drawStarCollectible(ctx, size) {
         const radius = size / 2;
-        
+
         ctx.save();
-        
+
         // Golden star
         ctx.fillStyle = '#FFD700';
         ctx.strokeStyle = '#FFA500';
         ctx.lineWidth = 2;
-        
+
         // Draw 5-pointed star
         ctx.beginPath();
         for (let i = 0; i < 5; i++) {
             const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
             const x = Math.cos(angle) * radius * 0.8;
             const y = Math.sin(angle) * radius * 0.8;
-            
+
             if (i === 0) {
                 ctx.moveTo(x, y);
             } else {
                 ctx.lineTo(x, y);
             }
-            
+
             // Inner point
             const innerAngle = angle + (2 * Math.PI / 5);
             const innerX = Math.cos(innerAngle) * radius * 0.3;
@@ -1328,13 +1328,13 @@ class GemRenderer {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-        
+
         // Add sparkle
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
         ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.15, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.restore();
     }
 
@@ -1343,9 +1343,9 @@ class GemRenderer {
      */
     drawSunCollectible(ctx, size) {
         const radius = size / 2;
-        
+
         ctx.save();
-        
+
         // Sun rays
         ctx.strokeStyle = '#FFA500';
         ctx.lineWidth = 3;
@@ -1356,24 +1356,24 @@ class GemRenderer {
             ctx.lineTo(Math.cos(angle) * radius * 0.9, Math.sin(angle) * radius * 0.9);
             ctx.stroke();
         }
-        
+
         // Sun circle
         const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.6);
         gradient.addColorStop(0, '#FFF700');
         gradient.addColorStop(0.5, '#FFD700');
         gradient.addColorStop(1, '#FFA500');
-        
+
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Shine
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.beginPath();
         ctx.arc(-radius * 0.2, -radius * 0.2, radius * 0.2, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.restore();
     }
 
@@ -1382,37 +1382,37 @@ class GemRenderer {
      */
     drawMoonCollectible(ctx, size) {
         const radius = size / 2;
-        
+
         ctx.save();
-        
+
         // Moon crescent
         const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.8);
         gradient.addColorStop(0, '#F0F0F0');
         gradient.addColorStop(0.7, '#E0E0E0');
         gradient.addColorStop(1, '#C0C0C0');
-        
+
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(0, 0, radius * 0.8, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Create crescent by cutting out a circle
         ctx.globalCompositeOperation = 'destination-out';
         ctx.beginPath();
         ctx.arc(radius * 0.3, 0, radius * 0.6, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalCompositeOperation = 'source-over';
-        
+
         // Add craters
         ctx.fillStyle = 'rgba(180, 180, 180, 0.4)';
         ctx.beginPath();
         ctx.arc(-radius * 0.2, -radius * 0.3, radius * 0.15, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.beginPath();
         ctx.arc(-radius * 0.3, radius * 0.2, radius * 0.1, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Add stars around moon
         ctx.fillStyle = '#FFFFFF';
         const starPositions = [
@@ -1420,13 +1420,13 @@ class GemRenderer {
             [radius * 0.7, radius * 0.7],
             [-radius * 0.8, -radius * 0.6]
         ];
-        
+
         starPositions.forEach(([x, y]) => {
             ctx.beginPath();
             ctx.arc(x, y, 2, 0, Math.PI * 2);
             ctx.fill();
         });
-        
+
         ctx.restore();
     }
 

@@ -70,7 +70,7 @@ class GameBoard {
                 this.grid[y][x] = gem;
             }
         }
-        
+
         // Add collectibles if in Stargazer mode
         if (this.gameMode && this.gameMode.name === 'Stargazer' && typeof this.gameMode.addCollectibles === 'function') {
             this.gameMode.addCollectibles(this);
@@ -200,7 +200,7 @@ class GameBoard {
             for (let x = 0; x < this.width - 2; x++) {
                 const gem = this.getGem(x, y);
                 if (!gem || visited[y][x]) continue;
-                
+
                 // Skip collectibles - they don't participate in matches
                 const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
                 if (gem.type === GemType.STAR || gem.type === GemType.SUN || gem.type === GemType.MOON) {
@@ -231,7 +231,7 @@ class GameBoard {
             for (let y = 0; y < this.height - 2; y++) {
                 const gem = this.getGem(x, y);
                 if (!gem || visited[y][x]) continue;
-                
+
                 // Skip collectibles - they don't participate in matches
                 const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
                 if (gem.type === GemType.STAR || gem.type === GemType.SUN || gem.type === GemType.MOON) {
@@ -563,12 +563,12 @@ class GameBoard {
 
             match.gems.forEach(pos => {
                 const key = `${pos.x},${pos.y}`;
-                
+
                 // Check if this position will have a special gem created - if so, DON'T remove it
                 const willCreateSpecialHere = specialGemsToCreate.some(
                     special => special.x === pos.x && special.y === pos.y
                 );
-                
+
                 if (!willCreateSpecialHere) {
                     gemsToRemove.add(key);
                 }
@@ -1054,14 +1054,14 @@ class GameBoard {
                     (this.selectedGem.type === GemType.STAR || this.selectedGem.type === GemType.SUN || this.selectedGem.type === GemType.MOON) ||
                     (clickedGem.type === GemType.STAR || clickedGem.type === GemType.SUN || clickedGem.type === GemType.MOON)
                 );
-                
+
                 if (isCollectibleSwap && this.gameMode && this.gameMode.name === 'Stargazer') {
                     // Allow swapping with collectibles to move them
                     this.swapGems(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y);
                     this.clearSelection();
                     return true;
                 }
-                
+
                 // First check if normal swap would create matches
                 if (this.wouldCreateMatchAfterSwap(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y)) {
                     // Valid swap - do normal swap
@@ -1104,14 +1104,14 @@ class GameBoard {
                 (this.selectedGem.type === GemType.STAR || this.selectedGem.type === GemType.SUN || this.selectedGem.type === GemType.MOON) ||
                 (clickedGem.type === GemType.STAR || clickedGem.type === GemType.SUN || clickedGem.type === GemType.MOON)
             );
-            
+
             if (isCollectibleSwap && this.gameMode && this.gameMode.name === 'Stargazer') {
                 // Allow swapping with collectibles to move them
                 this.swapGems(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y);
                 this.clearSelection();
                 return true;
             }
-            
+
             // First check if normal swap would create matches
             if (this.wouldCreateMatchAfterSwap(this.selectedGem.x, this.selectedGem.y, clickedGem.x, clickedGem.y)) {
                 // Valid swap - do normal swap

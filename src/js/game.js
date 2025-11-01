@@ -570,7 +570,7 @@ class GemsBlastGame {
             this.currentGameMode.reset();
         }
         this.score = 0;
-        
+
         // Reset timer and moves to initial values
         if (this.config.enableMoves) {
             this.moves = this.config.initialMoves;
@@ -578,7 +578,7 @@ class GemsBlastGame {
         if (this.config.enableTimer) {
             this.timeRemaining = this.config.initialTime;
         }
-        
+
         this.board.initializeBoard();
         this.startGame();
     }

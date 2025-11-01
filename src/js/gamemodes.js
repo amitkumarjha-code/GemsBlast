@@ -328,7 +328,7 @@ class StargazerMode extends GameMode {
             suns: 0,
             moons: 0
         };
-        
+
         this.targets = {
             stars: 3,
             suns: 2,
@@ -365,25 +365,25 @@ class StargazerMode extends GameMode {
      */
     addCollectibles(board) {
         this.board = board;
-        
+
         // Spawn initial collectibles in top rows
         const collectibleTypes = [
             { type: 'star', count: this.targets.stars },
             { type: 'sun', count: this.targets.suns },
             { type: 'moon', count: this.targets.moons }
         ];
-        
+
         collectibleTypes.forEach(({ type, count }) => {
             for (let i = 0; i < count; i++) {
                 // Place in top 2 rows randomly
                 const x = Math.floor(Math.random() * board.width);
                 const y = Math.floor(Math.random() * 2);
-                
+
                 // Create collectible gem
                 const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
-                const gemType = type === 'star' ? GemType.STAR : 
-                               type === 'sun' ? GemType.SUN : GemType.MOON;
-                
+                const gemType = type === 'star' ? GemType.STAR :
+                    type === 'sun' ? GemType.SUN : GemType.MOON;
+
                 const collectible = new Gem(x, y, 0, gemType);
                 board.setGem(x, y, collectible);
             }
@@ -396,20 +396,20 @@ class StargazerMode extends GameMode {
     updateObjectives(matches) {
         // Check if any collectibles reached the bottom row
         if (!this.board) return;
-        
+
         const bottomRow = this.board.height - 1;
-        
+
         for (let x = 0; x < this.board.width; x++) {
             const gem = this.board.getGem(x, bottomRow);
             if (!gem) continue;
-            
+
             const GemType = window.GemType || { STAR: 'star', SUN: 'sun', MOON: 'moon' };
-            
+
             if (gem.type === GemType.STAR && this.collected.stars < this.targets.stars) {
                 this.collected.stars++;
                 this.objectives[0].current = this.collected.stars;
                 this.board.setGem(x, bottomRow, null);
-                
+
                 // Particle effect
                 if (this.board.particleSystem) {
                     const worldX = this.board.offsetX + x * this.board.cellSize + this.board.cellSize / 2;
@@ -421,7 +421,7 @@ class StargazerMode extends GameMode {
                 this.collected.suns++;
                 this.objectives[1].current = this.collected.suns;
                 this.board.setGem(x, bottomRow, null);
-                
+
                 if (this.board.particleSystem) {
                     const worldX = this.board.offsetX + x * this.board.cellSize + this.board.cellSize / 2;
                     const worldY = this.board.offsetY + bottomRow * this.board.cellSize + this.board.cellSize / 2;
@@ -432,7 +432,7 @@ class StargazerMode extends GameMode {
                 this.collected.moons++;
                 this.objectives[2].current = this.collected.moons;
                 this.board.setGem(x, bottomRow, null);
-                
+
                 if (this.board.particleSystem) {
                     const worldX = this.board.offsetX + x * this.board.cellSize + this.board.cellSize / 2;
                     const worldY = this.board.offsetY + bottomRow * this.board.cellSize + this.board.cellSize / 2;
@@ -447,8 +447,8 @@ class StargazerMode extends GameMode {
      */
     checkCompletion() {
         return this.collected.stars >= this.targets.stars &&
-               this.collected.suns >= this.targets.suns &&
-               this.collected.moons >= this.targets.moons;
+            this.collected.suns >= this.targets.suns &&
+            this.collected.moons >= this.targets.moons;
     }
 
     /**
