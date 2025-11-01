@@ -314,7 +314,7 @@ class GameBoard {
                     // Check if one is horizontal and one is vertical
                     if ((match1.type === 'horizontal' && match2.type === 'vertical') ||
                         (match1.type === 'vertical' && match2.type === 'horizontal')) {
-                        
+
                         // Combine into a bomb match
                         const combinedGems = [...match1.gems];
                         match2.gems.forEach(gem => {
@@ -1145,7 +1145,7 @@ class GameBoard {
         };
 
         const message = messages[comboType] || 'Special Combo!';
-        
+
         if (window.gemsBlastApp && window.gemsBlastApp.game && window.gemsBlastApp.game.ui) {
             window.gemsBlastApp.game.ui.showNotification(message, 'success');
         }
@@ -1186,7 +1186,7 @@ class GameBoard {
                         const gem = this.getGem(x, effect.position.y);
                         if (gem) {
                             affectedGems.push({ gem, x, y: effect.position.y });
-                            
+
                             // Gradual disappearance - delay based on distance from origin
                             const delay = Math.abs(x - effect.position.x) * 50;
                             setTimeout(() => {
@@ -1206,7 +1206,7 @@ class GameBoard {
                         const gem = this.getGem(effect.position.x, y);
                         if (gem) {
                             affectedGems.push({ gem, x: effect.position.x, y });
-                            
+
                             // Gradual disappearance - delay based on distance from origin
                             const delay = Math.abs(y - effect.position.y) * 50;
                             setTimeout(() => {
@@ -1248,7 +1248,7 @@ class GameBoard {
                             const gem = this.getGem(x, y);
                             if (gem) {
                                 affectedGems.push({ gem, x, y });
-                                
+
                                 // Gradual disappearance - delay based on distance from center
                                 const distance = Math.abs(dx) + Math.abs(dy);
                                 const delay = distance * 60;
@@ -1288,11 +1288,11 @@ class GameBoard {
                         const gem = this.getGem(x, y);
                         if (gem && gem.color === targetColor) {
                             affectedGems.push({ gem, x, y });
-                            
+
                             // Gradual disappearance - each gem after a delay
                             const delay = gemIndex * 40;
                             gemIndex++;
-                            
+
                             setTimeout(() => {
                                 this.setGem(x, y, null);
                                 gem.animateOut();

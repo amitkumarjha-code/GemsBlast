@@ -247,7 +247,7 @@ class GemsBlastGame {
 
         // Reset game state
         this.score = 0;
-        
+
         // Randomize limits based on config
         if (this.config.enableMoves) {
             // Random move limit between 20-60
@@ -256,7 +256,7 @@ class GemsBlastGame {
         } else {
             this.moves = this.config.initialMoves;
         }
-        
+
         if (this.config.enableTimer) {
             // Random time limit between 60-120 seconds (1-2 minutes)
             this.timeRemaining = Math.floor(Math.random() * 61) + 60; // 60 to 120
@@ -422,7 +422,7 @@ class GemsBlastGame {
      */
     endGame(success = false) {
         this.gameRunning = false;
-        
+
         // Stop the timer
         this.stopTimer();
 
@@ -595,7 +595,7 @@ class GemsBlastGame {
         if (this.config.enableMoves && this.moves > 0) {
             this.moves--;
             this.ui.updateMoves();
-            
+
             // Play warning sound for last 3 moves
             if (this.moves <= 3 && this.moves > 0) {
                 this.audioManager.playSFX(SoundEffect.TIMER_WARNING);

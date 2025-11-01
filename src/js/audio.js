@@ -62,7 +62,7 @@ class AudioManager {
         this.musicTrack = null;
         this.currentMusic = null;
         this.musicTimeout = null;
-    this.musicNodes = new Set();
+        this.musicNodes = new Set();
 
         // Sound pools for better performance
         this.sfxPool = {};
